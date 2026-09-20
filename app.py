@@ -32,15 +32,19 @@ def register():
     name = request.form.get("name", "").strip()
     email = request.form.get("email", "").strip().lower()
     password = request.form.get("password", "")
+    confirm_password = request.form.get("confirm_password", "")
 
     def form_error(message):
         return render_template("register.html", error=message, name=name, email=email)
 
-    if not name or not email or not password:
+    if not name or not email or not password or not confirm_password:
         return form_error("Please fill in all fields.")
 
     if len(password) < 8:
         return form_error("Password must be at least 8 characters long.")
+
+    if password != confirm_password:
+        return form_error("Passwords do not match.")
 
     password_hash = generate_password_hash(password)
     with closing(get_db()) as db:
