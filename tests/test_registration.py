@@ -23,9 +23,17 @@ def all_users():
     return rows
 
 
-def register(client, name="Test User", email="test@example.com", password="password123"):
+def register(
+    client, name="Test User", email="test@example.com", password="password123", confirm=None
+):
     return client.post(
-        "/register", data={"name": name, "email": email, "password": password}
+        "/register",
+        data={
+            "name": name,
+            "email": email,
+            "password": password,
+            "confirm_password": password if confirm is None else confirm,
+        },
     )
 
 
@@ -60,9 +68,14 @@ def test_duplicate_email_rejected_case_insensitively(client):
     assert len(all_users()) == 1
 
 
-@pytest.mark.parametrize("field", ["name", "email", "password"])
+@pytest.mark.parametrize("field", ["name", "email", "password", "confirm_password"])
 def test_missing_field_rerenders_with_error(client, field):
-    data = {"name": "Test User", "email": "test@example.com", "password": "password123"}
+    data = {
+        "name": "Test User",
+        "email": "test@example.com",
+        "password": "password123",
+        "confirm_password": "password123",
+    }
     data[field] = ""
     response = client.post("/register", data=data)
 
@@ -85,6 +98,18 @@ def test_short_password_rejected_and_eight_chars_accepted(client):
 
     assert register(client, password="12345678").status_code == 302
     assert len(all_users()) == 1
+
+
+def test_password_mismatch_rejected(client):
+    response = register(client, password="password123", confirm="password124")
+
+    assert response.status_code == 200
+    assert b"Passwords do not match." in response.data
+    assert all_users() == []
+
+
+def test_form_has_confirm_password_field(client):
+    assert b'name="confirm_password"' in client.get("/register").data
 
 
 def test_error_rerender_keeps_name_and_email_but_not_password(client):
