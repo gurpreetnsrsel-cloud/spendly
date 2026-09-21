@@ -104,6 +104,51 @@ def logout():
     return redirect(url_for("landing"))
 
 
+@app.route("/profile")
+def profile():
+    if not session.get("user_id"):
+        return redirect(url_for("login"))
+
+    # Hardcoded demo data — real queries are wired up in Step 5.
+    user = {
+        "name": "Demo User",
+        "email": "demo@spendly.com",
+        "initials": "DU",
+        "member_since": "January 2026",
+    }
+    stats = {
+        "total_spent": "9,100.00",
+        "transaction_count": 7,
+        "top_category": "Food",
+    }
+    transactions = [
+        {"date": "12 Sep 2026", "description": "Groceries", "category": "Food", "amount": "1,850.00"},
+        {"date": "10 Sep 2026", "description": "Metro card recharge", "category": "Transport", "amount": "500.00"},
+        {"date": "08 Sep 2026", "description": "Electricity bill", "category": "Bills", "amount": "2,400.00"},
+        {"date": "06 Sep 2026", "description": "Pharmacy", "category": "Health", "amount": "640.00"},
+        {"date": "04 Sep 2026", "description": "Movie tickets", "category": "Entertainment", "amount": "900.00"},
+        {"date": "02 Sep 2026", "description": "New shoes", "category": "Shopping", "amount": "2,100.00"},
+        {"date": "01 Sep 2026", "description": "Lunch with friends", "category": "Food", "amount": "710.00"},
+    ]
+    # bar_width is relative to the largest category, in steps of 10 (CSS class).
+    categories = [
+        {"name": "Food", "total": "2,560.00", "percent": 28, "bar_width": 100},
+        {"name": "Bills", "total": "2,400.00", "percent": 26, "bar_width": 90},
+        {"name": "Shopping", "total": "2,100.00", "percent": 23, "bar_width": 80},
+        {"name": "Entertainment", "total": "900.00", "percent": 10, "bar_width": 40},
+        {"name": "Health", "total": "640.00", "percent": 7, "bar_width": 30},
+        {"name": "Transport", "total": "500.00", "percent": 5, "bar_width": 20},
+    ]
+
+    return render_template(
+        "profile.html",
+        user=user,
+        stats=stats,
+        transactions=transactions,
+        categories=categories,
+    )
+
+
 @app.route("/terms")
 def terms():
     return render_template("terms.html")
@@ -117,11 +162,6 @@ def privacy():
 # ------------------------------------------------------------------ #
 # Placeholder routes — students will implement these                  #
 # ------------------------------------------------------------------ #
-
-@app.route("/profile")
-def profile():
-    return "Profile page — coming in Step 4"
-
 
 @app.route("/expenses/add")
 def add_expense():
