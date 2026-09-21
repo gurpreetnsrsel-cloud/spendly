@@ -61,6 +61,7 @@ def test_valid_registration_creates_hashed_user_and_session(client):
 
 def test_duplicate_email_rejected_case_insensitively(client):
     register(client, email="a@example.com")
+    client.get("/logout")
     response = register(client, email="A@Example.com")
 
     assert response.status_code == 200
@@ -125,6 +126,7 @@ def test_error_rerender_keeps_name_and_email_but_not_password(client):
 def test_multiple_distinct_users_register(client):
     for i in range(3):
         assert register(client, email=f"user{i}@example.com").status_code == 302
+        client.get("/logout")
 
     users = all_users()
     assert len(users) == 3
