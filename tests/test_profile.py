@@ -13,10 +13,21 @@ def client(tmp_path, monkeypatch):
     db_module.init_db()
 
     conn = db_module.get_db()
-    conn.execute(
+    cursor = conn.execute(
         "INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)",
         ("Test User", EMAIL, generate_password_hash(PASSWORD)),
     )
+    user_id = cursor.lastrowid
+    for amount, category, expense_date, description in [
+        (49.99, "Food", "2026-09-01", "Groceries"),
+        (15.50, "Transport", "2026-09-03", "Bus pass"),
+        (120.00, "Bills", "2026-09-05", "Electricity bill"),
+    ]:
+        conn.execute(
+            "INSERT INTO expenses (user_id, amount, category, date, description) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (user_id, amount, category, expense_date, description),
+        )
     conn.commit()
     conn.close()
 

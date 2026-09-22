@@ -6,6 +6,12 @@ from flask import Flask, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from database.db import get_db, init_db, seed_db
+from database.queries import (
+    get_category_breakdown,
+    get_recent_transactions,
+    get_summary_stats,
+    get_user_by_id,
+)
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")
@@ -109,35 +115,29 @@ def profile():
     if not session.get("user_id"):
         return redirect(url_for("login"))
 
-    # Hardcoded demo data — real queries are wired up in Step 5.
-    user = {
-        "name": "Demo User",
-        "email": "demo@spendly.com",
-        "initials": "DU",
-        "member_since": "January 2026",
-    }
-    stats = {
-        "total_spent": "9,100.00",
-        "transaction_count": 7,
-        "top_category": "Food",
-    }
-    transactions = [
-        {"date": "12 Sep 2026", "description": "Groceries", "category": "Food", "amount": "1,850.00"},
-        {"date": "10 Sep 2026", "description": "Metro card recharge", "category": "Transport", "amount": "500.00"},
-        {"date": "08 Sep 2026", "description": "Electricity bill", "category": "Bills", "amount": "2,400.00"},
-        {"date": "06 Sep 2026", "description": "Pharmacy", "category": "Health", "amount": "640.00"},
-        {"date": "04 Sep 2026", "description": "Movie tickets", "category": "Entertainment", "amount": "900.00"},
-        {"date": "02 Sep 2026", "description": "New shoes", "category": "Shopping", "amount": "2,100.00"},
-        {"date": "01 Sep 2026", "description": "Lunch with friends", "category": "Food", "amount": "710.00"},
-    ]
-    # bar_width is relative to the largest category, in steps of 10 (CSS class).
+    user_id = session["user_id"]
+
+    user_row = get_user_by_id(user_id)
+    name_parts = user_row["name"].split()
+    initials = "".join(part[0] for part in name_parts[:2]).upper()
+    user = {**user_row, "initials": initials}
+
+    # --- summary stats ---
+    stats = get_summary_stats(user_id)
+
+    # --- transaction history ---
+    transactions = get_recent_transactions(user_id, limit=10)
+
+    # --- category breakdown ---
+    categories_raw = get_category_breakdown(user_id)
     categories = [
-        {"name": "Food", "total": "2,560.00", "percent": 28, "bar_width": 100},
-        {"name": "Bills", "total": "2,400.00", "percent": 26, "bar_width": 90},
-        {"name": "Shopping", "total": "2,100.00", "percent": 23, "bar_width": 80},
-        {"name": "Entertainment", "total": "900.00", "percent": 10, "bar_width": 40},
-        {"name": "Health", "total": "640.00", "percent": 7, "bar_width": 30},
-        {"name": "Transport", "total": "500.00", "percent": 5, "bar_width": 20},
+        {
+            "name": c["name"],
+            "total": c["amount"],
+            "percent": c["pct"],
+            "bar_width": max(10, (c["pct"] // 10) * 10) if c["pct"] else 0,
+        }
+        for c in categories_raw
     ]
 
     return render_template(
