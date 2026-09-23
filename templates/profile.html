@@ -22,13 +22,13 @@
         <div class="profile-card profile-filter-bar">
             <div class="profile-filter-presets">
                 <a href="{{ url_for('profile', date_from=presets.month[0], date_to=presets.month[1]) }}"
-                   class="profile-filter-btn{% if date_from == presets.month[0] and date_to == presets.month[1] %} profile-filter-btn-active{% endif %}">This Month</a>
+                   class="profile-filter-btn{% if active_preset == 'month' %} profile-filter-btn-active{% endif %}">This Month</a>
                 <a href="{{ url_for('profile', date_from=presets['3m'][0], date_to=presets['3m'][1]) }}"
-                   class="profile-filter-btn{% if date_from == presets['3m'][0] and date_to == presets['3m'][1] %} profile-filter-btn-active{% endif %}">Last 3 Months</a>
+                   class="profile-filter-btn{% if active_preset == '3m' %} profile-filter-btn-active{% endif %}">Last 3 Months</a>
                 <a href="{{ url_for('profile', date_from=presets['6m'][0], date_to=presets['6m'][1]) }}"
-                   class="profile-filter-btn{% if date_from == presets['6m'][0] and date_to == presets['6m'][1] %} profile-filter-btn-active{% endif %}">Last 6 Months</a>
+                   class="profile-filter-btn{% if active_preset == '6m' %} profile-filter-btn-active{% endif %}">Last 6 Months</a>
                 <a href="{{ url_for('profile') }}"
-                   class="profile-filter-btn{% if not date_from and not date_to %} profile-filter-btn-active{% endif %}">All Time</a>
+                   class="profile-filter-btn{% if active_preset == 'all' %} profile-filter-btn-active{% endif %}">All Time</a>
             </div>
             <form action="{{ url_for('profile') }}" method="get" class="profile-filter-form{% if date_from or date_to %} profile-filter-form-active{% endif %}">
                 <label class="profile-filter-label" for="date_from">From

@@ -152,6 +152,16 @@ def _preset_ranges():
     }
 
 
+def _active_preset(date_from, date_to, presets):
+    """Return the preset key matching (date_from, date_to), "all", or None."""
+    if not date_from and not date_to:
+        return "all"
+    for key, (preset_from, preset_to) in presets.items():
+        if date_from == preset_from and date_to == preset_to:
+            return key
+    return None
+
+
 @app.route("/profile")
 def profile():
     if not session.get("user_id"):
@@ -165,6 +175,7 @@ def profile():
     user = {**user_row, "initials": initials}
 
     date_from, date_to = _parse_date_filter()
+    presets = _preset_ranges()
 
     # --- summary stats ---
     stats = get_summary_stats(user_id, date_from=date_from, date_to=date_to)
@@ -175,7 +186,9 @@ def profile():
     )
 
     # --- category breakdown ---
-    categories_raw = get_category_breakdown(user_id, date_from=date_from, date_to=date_to)
+    categories_raw = get_category_breakdown(
+        user_id, date_from=date_from, date_to=date_to
+    )
     categories = [
         {
             "name": c["name"],
@@ -194,7 +207,8 @@ def profile():
         categories=categories,
         date_from=date_from,
         date_to=date_to,
-        presets=_preset_ranges(),
+        presets=presets,
+        active_preset=_active_preset(date_from, date_to, presets),
     )
 
 
