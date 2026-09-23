@@ -1,8 +1,9 @@
 import os
 import sqlite3
 from contextlib import closing
+from datetime import date, datetime, timedelta
 
-from flask import Flask, redirect, render_template, request, session, url_for
+from flask import Flask, flash, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from database.db import get_db, init_db, seed_db
@@ -110,6 +111,57 @@ def logout():
     return redirect(url_for("landing"))
 
 
+def _parse_date_filter():
+    """Read and validate date_from/date_to from the query string.
+
+    Returns (date_from, date_to) as ISO strings, or None for a bound that is
+    missing or malformed. If both are present but out of order, flashes an
+    error and returns (None, None).
+    """
+    raw_from = request.args.get("date_from")
+    raw_to = request.args.get("date_to")
+
+    date_from = date_to = None
+    if raw_from:
+        try:
+            datetime.strptime(raw_from, "%Y-%m-%d")
+            date_from = raw_from
+        except ValueError:
+            date_from = None
+    if raw_to:
+        try:
+            datetime.strptime(raw_to, "%Y-%m-%d")
+            date_to = raw_to
+        except ValueError:
+            date_to = None
+
+    if date_from and date_to and date_from > date_to:
+        flash("Start date must be before end date.")
+        return None, None
+
+    return date_from, date_to
+
+
+def _preset_ranges():
+    """Return {"month", "3m", "6m"} preset (date_from, date_to) tuples."""
+    today = date.today()
+    return {
+        "month": (today.replace(day=1).isoformat(), today.isoformat()),
+        "3m": ((today - timedelta(days=90)).isoformat(), today.isoformat()),
+        "6m": ((today - timedelta(days=180)).isoformat(), today.isoformat()),
+    }
+
+
+def _active_preset(date_from, date_to, presets):
+    """Return the preset key matching (date_from, date_to), "all", or None."""
+    if not date_from and not date_to:
+        return "all"
+    for key, (preset_from, preset_to) in presets.items():
+        if date_from == preset_from and date_to == preset_to:
+            return key
+    return None
+
+
 @app.route("/profile")
 def profile():
     if not session.get("user_id"):
@@ -122,14 +174,21 @@ def profile():
     initials = "".join(part[0] for part in name_parts[:2]).upper()
     user = {**user_row, "initials": initials}
 
+    date_from, date_to = _parse_date_filter()
+    presets = _preset_ranges()
+
     # --- summary stats ---
-    stats = get_summary_stats(user_id)
+    stats = get_summary_stats(user_id, date_from=date_from, date_to=date_to)
 
     # --- transaction history ---
-    transactions = get_recent_transactions(user_id, limit=10)
+    transactions = get_recent_transactions(
+        user_id, limit=10, date_from=date_from, date_to=date_to
+    )
 
     # --- category breakdown ---
-    categories_raw = get_category_breakdown(user_id)
+    categories_raw = get_category_breakdown(
+        user_id, date_from=date_from, date_to=date_to
+    )
     categories = [
         {
             "name": c["name"],
@@ -146,6 +205,10 @@ def profile():
         stats=stats,
         transactions=transactions,
         categories=categories,
+        date_from=date_from,
+        date_to=date_to,
+        presets=presets,
+        active_preset=_active_preset(date_from, date_to, presets),
     )
 
 

@@ -2,6 +2,10 @@
 
 {% block title %}Profile — Spendly{% endblock %}
 
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
+{% endblock %}
+
 {% block content %}
 <section class="profile-page">
     <div class="profile-inner">
@@ -13,6 +17,28 @@
                 <p class="profile-email">{{ user.email }}</p>
                 <p class="profile-since">Member since {{ user.member_since }}</p>
             </div>
+        </div>
+
+        <div class="profile-card profile-filter-bar">
+            <div class="profile-filter-presets">
+                <a href="{{ url_for('profile', date_from=presets.month[0], date_to=presets.month[1]) }}"
+                   class="profile-filter-btn{% if active_preset == 'month' %} profile-filter-btn-active{% endif %}">This Month</a>
+                <a href="{{ url_for('profile', date_from=presets['3m'][0], date_to=presets['3m'][1]) }}"
+                   class="profile-filter-btn{% if active_preset == '3m' %} profile-filter-btn-active{% endif %}">Last 3 Months</a>
+                <a href="{{ url_for('profile', date_from=presets['6m'][0], date_to=presets['6m'][1]) }}"
+                   class="profile-filter-btn{% if active_preset == '6m' %} profile-filter-btn-active{% endif %}">Last 6 Months</a>
+                <a href="{{ url_for('profile') }}"
+                   class="profile-filter-btn{% if active_preset == 'all' %} profile-filter-btn-active{% endif %}">All Time</a>
+            </div>
+            <form action="{{ url_for('profile') }}" method="get" class="profile-filter-form{% if date_from or date_to %} profile-filter-form-active{% endif %}">
+                <label class="profile-filter-label" for="date_from">From
+                    <input type="date" id="date_from" name="date_from" value="{{ date_from or '' }}">
+                </label>
+                <label class="profile-filter-label" for="date_to">To
+                    <input type="date" id="date_to" name="date_to" value="{{ date_to or '' }}">
+                </label>
+                <button type="submit" class="profile-filter-apply">Apply</button>
+            </form>
         </div>
 
         <div class="profile-stats">
