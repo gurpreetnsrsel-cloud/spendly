@@ -76,7 +76,10 @@
             </div>
 
             <div class="profile-card profile-history">
-                <h2 class="profile-section-title">Transaction history</h2>
+                <div class="profile-history-header">
+                    <h2 class="profile-section-title">Transaction history</h2>
+                    <a href="{{ url_for('add_expense') }}" class="btn-primary">Add Expense</a>
+                </div>
                 {% if transactions %}
                 <div class="profile-table-wrap">
                     <table class="profile-table">

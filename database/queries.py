@@ -96,6 +96,18 @@ def get_recent_transactions(user_id, limit=10, date_from=None, date_to=None):
     return transactions
 
 
+def insert_expense(user_id, amount, category, expense_date, description):
+    """Insert a new expense row for user_id and return its new id."""
+    with closing(get_db()) as db:
+        cursor = db.execute(
+            "INSERT INTO expenses (user_id, amount, category, date, description) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (user_id, amount, category, expense_date, description),
+        )
+        db.commit()
+        return cursor.lastrowid
+
+
 def get_category_breakdown(user_id, date_from=None, date_to=None):
     """Return per-category totals for user_id, sorted by amount descending.
 
