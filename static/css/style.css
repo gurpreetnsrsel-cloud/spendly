@@ -826,6 +826,14 @@ a { color: inherit; text-decoration: none; }
 
 .profile-empty { color: var(--ink-muted); text-align: center; padding: 2rem 0; }
 
+.profile-row-action {
+    color: var(--accent);
+    font-size: 0.8125rem;
+    font-weight: 500;
+}
+
+.profile-row-action:hover { text-decoration: underline; }
+
 /* Category badges */
 
 .badge {
