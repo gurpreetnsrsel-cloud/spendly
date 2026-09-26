@@ -76,7 +76,7 @@ def get_recent_transactions(user_id, limit=10, date_from=None, date_to=None):
     clause, date_params = _date_filter_sql(date_from, date_to)
     with closing(get_db()) as db:
         rows = db.execute(
-            "SELECT date, description, category, amount FROM expenses "
+            "SELECT id, date, description, category, amount FROM expenses "
             "WHERE user_id = ?" + clause + " ORDER BY date DESC, id DESC LIMIT ?",
             (user_id,) + date_params + (limit,),
         ).fetchall()
@@ -86,6 +86,7 @@ def get_recent_transactions(user_id, limit=10, date_from=None, date_to=None):
         row_date = datetime.strptime(row["date"], "%Y-%m-%d")
         transactions.append(
             {
+                "id": row["id"],
                 "date": row_date.strftime("%d %b %Y"),
                 "description": row["description"],
                 "category": row["category"],
@@ -106,6 +107,39 @@ def insert_expense(user_id, amount, category, expense_date, description):
         )
         db.commit()
         return cursor.lastrowid
+
+
+def get_expense_by_id(expense_id, user_id):
+    """Return {"id", "amount", "category", "date", "description"} for the
+    given expense_id, scoped to user_id, or None if not found/not owned."""
+    with closing(get_db()) as db:
+        row = db.execute(
+            "SELECT id, amount, category, date, description FROM expenses "
+            "WHERE id = ? AND user_id = ?",
+            (expense_id, user_id),
+        ).fetchone()
+
+    if row is None:
+        return None
+
+    return {
+        "id": row["id"],
+        "amount": row["amount"],
+        "category": row["category"],
+        "date": row["date"],
+        "description": row["description"],
+    }
+
+
+def update_expense(expense_id, user_id, amount, category, expense_date, description):
+    """Update an existing expense row owned by user_id."""
+    with closing(get_db()) as db:
+        db.execute(
+            "UPDATE expenses SET amount = ?, category = ?, date = ?, description = ? "
+            "WHERE id = ? AND user_id = ?",
+            (amount, category, expense_date, description, expense_id, user_id),
+        )
+        db.commit()
 
 
 def get_category_breakdown(user_id, date_from=None, date_to=None):
