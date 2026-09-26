@@ -1,3 +1,4 @@
+import math
 import os
 import sqlite3
 from contextlib import closing
@@ -6,12 +7,13 @@ from datetime import date, datetime, timedelta
 from flask import Flask, flash, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from database.db import get_db, init_db, seed_db
+from database.db import CATEGORIES, get_db, init_db, seed_db
 from database.queries import (
     get_category_breakdown,
     get_recent_transactions,
     get_summary_stats,
     get_user_by_id,
+    insert_expense,
 )
 
 app = Flask(__name__)
@@ -233,9 +235,62 @@ def privacy():
 # Placeholder routes — students will implement these                  #
 # ------------------------------------------------------------------ #
 
-@app.route("/expenses/add")
+@app.route("/expenses/add", methods=["GET", "POST"])
 def add_expense():
-    return "Add expense — coming in Step 7"
+    if not session.get("user_id"):
+        return redirect(url_for("login"))
+
+    today = date.today().isoformat()
+
+    if request.method == "GET":
+        return render_template(
+            "add_expense.html",
+            categories=CATEGORIES,
+            amount="",
+            category="",
+            expense_date=today,
+            description="",
+        )
+
+    amount_raw = request.form.get("amount", "").strip()
+    category = request.form.get("category", "").strip()
+    expense_date = request.form.get("date", "").strip()
+    description = request.form.get("description", "").strip()
+
+    def form_error(message):
+        return render_template(
+            "add_expense.html",
+            categories=CATEGORIES,
+            error=message,
+            amount=amount_raw,
+            category=category,
+            expense_date=expense_date,
+            description=description,
+        )
+
+    try:
+        amount = float(amount_raw)
+    except ValueError:
+        return form_error("Please enter a valid amount.")
+    if not math.isfinite(amount) or amount <= 0:
+        return form_error("Amount must be greater than zero.")
+
+    if category not in CATEGORIES:
+        return form_error("Please choose a valid category.")
+
+    try:
+        datetime.strptime(expense_date, "%Y-%m-%d")
+    except ValueError:
+        return form_error("Please enter a valid date.")
+
+    insert_expense(
+        session["user_id"],
+        amount,
+        category,
+        expense_date,
+        description or None,
+    )
+    return redirect(url_for("profile"))
 
 
 @app.route("/expenses/<int:id>/edit")
