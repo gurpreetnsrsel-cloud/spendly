@@ -142,6 +142,16 @@ def update_expense(expense_id, user_id, amount, category, expense_date, descript
         db.commit()
 
 
+def delete_expense(expense_id, user_id):
+    """Delete an expense row owned by user_id."""
+    with closing(get_db()) as db:
+        db.execute(
+            "DELETE FROM expenses WHERE id = ? AND user_id = ?",
+            (expense_id, user_id),
+        )
+        db.commit()
+
+
 def get_category_breakdown(user_id, date_from=None, date_to=None):
     """Return per-category totals for user_id, sorted by amount descending.
 
